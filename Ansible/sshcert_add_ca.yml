@@ -1,0 +1,33 @@
+---
+- name: Configure StrongDM CA
+  hosts: your_target_hosts
+  become: true
+  vars_prompt:
+    - name: sdm_ca
+      prompt: "Enter the CA for your org:"
+      private: no
+  tasks:
+    - name: Create sdm_ca.pub file
+      file:
+        path: /etc/ssh/sdm_ca.pub
+        state: touch
+
+    - name: Write sdm_ca value to sdm_ca.pub file
+      copy:
+        content: "{{ sdm_ca }}"
+        dest: /etc/ssh/sdm_ca.pub
+
+    - name: Set permissions for sdm_ca.pub file
+      file:
+        path: /etc/ssh/sdm_ca.pub
+        mode: "0600"
+
+    - name: Append StrongDM CA to sshd_config
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        line: "#StrongDM CA\nTrustedUserCAKeys /etc/ssh/sdm_ca.pub"
+
+    - name: Restart SSH daemon
+      service:
+        name: sshd
+        state: restarted
